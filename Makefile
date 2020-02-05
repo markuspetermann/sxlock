@@ -1,12 +1,7 @@
 # sxlock - simple X screen locker
-# © 2013-2014 Jakub Klinkovský
-# Based on sflock
-# © 2010-2011 Ben Ruijl
-# Based on slock
-# © 2006-2008 Anselm R. Garbe, Sander van Dijk
 
 NAME = sxlock
-VERSION = 1.0
+VERSION = 20200129-mp
 
 CC := $(CC) -std=c99
 
@@ -29,5 +24,6 @@ clean:
 	$(RM) sxlock
 
 install: sxlock
-	install -Dm755 sxlock $(DESTDIR)/usr/bin/sxlock
+	install -Dm4755 sxlock $(DESTDIR)/usr/bin/sxlock
 	install -Dm644 sxlock.pam $(DESTDIR)/etc/pam.d/sxlock
+	install -Dm644 'lock@.service' $(DESTDIR)//usr/lib/systemd/system/'lock@.service'

@@ -1,8 +1,8 @@
 sxlock - simple X screen locker
 ===============================
 
-Simple screen locker utility for X, fork of sflock, which is based on slock. Main difference is that
-sxlock uses PAM authentication, so no suid is needed.
+Simple screen locker utility for X, fork of sflock, which is based on slock.
+Main difference is that sxlock uses PAM authentication.
 
 
 Features
@@ -12,6 +12,8 @@ Features
  - uses PAM
  - sets DPMS timeout to 10 seconds, before exit restores original settings
  - basic RandR support (drawing centered on the primary output)
+ - Locks all virtual terminals, needs SUID bit
+ - Corrected PAM file to work with debian
 
 
 Requirements
@@ -26,20 +28,22 @@ Requirements
 Installation
 ------------
 
-Arch Linux users can install this package from the [AUR](https://aur.archlinux.org/packages/sxlock-git/).
-
 For manual installation just install dependencies, checkout and make:
 
-    git clone git://github.com/lahwaacz/sxlock.git
-    cd ./sxlock
-    make
-    ./sxlock
+```
+$ git clone git://github.com/markuspetermann/sxlock.git
+$ cd ./sxlock
+$ make
+$ sudo make install
+```
 
 
 Hooking into systemd events
 ---------------------------
 
-When using [systemd](http://freedesktop.org/wiki/Software/systemd/), you can use the following service (create `/etc/systemd/system/sxlock.service`) to let the system lock your X session on hibernation or suspend:
+When using [systemd](http://freedesktop.org/wiki/Software/systemd/), you can use
+the following service (create `/lib/systemd/system/lock@.service`) to let the
+system lock your X session on hibernation or suspend:
 
 ```ini
 [Unit]
@@ -55,4 +59,19 @@ ExecStart=/usr/bin/sxlock
 WantedBy=sleep.target
 ```
 
-However, this approach is useful only for single-user systems, because there is no way to know which user is currently logged in. Use [xss-lock](https://bitbucket.org/raymonad/xss-lock) as an alternative for multi-user systems.
+This service then needs to be enabled for each user, for user `foo` use
+```
+$ sudo systemctl enable lock@foo.service
+```
+
+
+Use with openbox
+----------------
+
+To use Win + L to lock the screen add the following to rc.xml
+
+```xml
+<keybind key="W-l">
+  <action name="Execute"><command>sxlock</command></action>
+</keybind>
+```

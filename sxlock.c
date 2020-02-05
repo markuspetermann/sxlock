@@ -1,6 +1,7 @@
 /*
  * MIT/X Consortium License
  *
+ * © 2020 Markus Petermann
  * © 2013 Jakub Klinkovský <kuba.klinkovsky at gmail dot com>
  * © 2010-2011 Ben Ruijl
  * © 2006-2008 Anselm R Garbe <garbeam at gmail dot com>
@@ -17,7 +18,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
@@ -34,7 +35,12 @@
 #include <getopt.h>     // getopt_long()
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>      // open()
+#include <unistd.h>     // fork()
 #include <sys/mman.h>   // mlock()
+#include <sys/ioctl.h>  // ioctl()
+#include <sys/wait.h>   // waitpid()
+#include <linux/vt.h>
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -303,7 +309,7 @@ parse_options(int argc, char** argv)
                 opt_usedpms = False;
                 break;
             case 'v':
-                die(PROGNAME"-"VERSION", © 2013 Jakub Klinkovský\n");
+                die(PROGNAME"-"VERSION"\n");
                 break;
             default:
                 return False;
@@ -319,6 +325,10 @@ main(int argc, char** argv) {
     int screen_num;
     WindowPositionInfo info;
 
+    int term;
+    int pid;
+    Bool lockVtSwitch = False;
+
     Cursor invisible;
     Window root, w;
     XColor black, red, white;
@@ -331,10 +341,10 @@ main(int argc, char** argv) {
         die("USER environment variable not set, please set it.\n");
 
     /* set default values for command-line arguments */
-    opt_passchar = "*";
+    opt_passchar = " ";
     opt_font = "-misc-fixed-medium-r-*--17-120-*-*-*-*-iso8859-1";
     opt_username = username;
-    opt_hidelength = False;
+    opt_hidelength = True;
     opt_usedpms = True;
 
     if (!parse_options(argc, argv))
@@ -352,6 +362,39 @@ main(int argc, char** argv) {
     for (unsigned int i = 0; i < sizeof(passdisp); i += strlen(opt_passchar))
         for (unsigned int j = 0; j < strlen(opt_passchar) && i + j < sizeof(passdisp); j++)
             passdisp[i + j] = opt_passchar[j];
+
+    /* disable tty switching */
+    if (geteuid() == 0) {
+        lockVtSwitch = True;
+        if ((term = open("/dev/console", O_RDWR)) == -1) {
+            perror("error opening console");
+        }
+        if ((ioctl(term, VT_LOCKSWITCH)) == -1) {
+            perror("error locking console");
+        }
+    }
+
+    /* deamonize */
+    pid = fork();
+    if (pid < 0) {
+        die("could not fork sxlock");
+    } else if (pid > 0) {
+        /* wait for locker to terminate */
+        waitpid(pid, 0, 0);
+
+        /* free and unlock */
+        if (lockVtSwitch) {
+            if ((ioctl(term, VT_UNLOCKSWITCH)) == -1) {
+                perror("error unlocking console");
+            }
+            close(term);
+        }
+
+        setuid(getuid()); // drop rights permanently
+        exit(0); // exit parent
+    } else {
+        setuid(getuid()); // drop rights permanently
+    }
 
     /* initialize random number generator */
     srand(time(NULL));
