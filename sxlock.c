@@ -349,7 +349,7 @@ main(int argc, char** argv) {
 
     /* set default values for command-line arguments */
     opt_passchar = " ";
-    opt_font = "sans-24";
+    opt_font = "mono-10";
     opt_username = username;
     opt_hidelength = True;
     opt_usedpms = True;
