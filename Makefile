@@ -1,7 +1,7 @@
 # sxlock - simple X screen locker
 
 NAME = sxlock
-VERSION = 20200129-mp
+VERSION = 20240912-mp
 
 CC := $(CC) -std=c99
 
