@@ -176,7 +176,7 @@ main_loop(Window w, GC gc, XftDraw* xftdraw, XftFont* font, WindowPositionInfo* 
     XftTextExtents8(dpy, font, (XftChar8*) username, strlen(username), &ext_username);
 
     /* distance of text from the line */
-    int line_dist = font->height;
+    int line_dist = font->height / 2;
 
     /* define base coordinates - middle of screen */
     int base_x = info->output_x + info->output_width / 2;
