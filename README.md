@@ -32,7 +32,7 @@ Installation
 For manual installation just install dependencies, checkout and make:
 
 ```
-$ git clone git://github.com/markuspetermann/sxlock.git
+$ git clone https://github.com/markuspetermann/sxlock.git
 $ cd ./sxlock
 $ make
 $ sudo make install
